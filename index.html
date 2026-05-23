@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modern Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #080808;
+      font-family: 'Outfit', sans-serif;
+      padding: 16px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -100px; left: -100px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -100px; right: -100px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(236,72,153,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .calc {
+      width: 100%;
+      max-width: 400px;
+      background: #0f0f0f;
+      border-radius: clamp(18px, 4vw, 28px);
+      padding: clamp(14px, 4vw, 24px);
+      border: 1px solid #2a2a2a;
+      box-shadow: 0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calc::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .calc::after {
+      content: '';
+      position: absolute;
+      bottom: -50px; right: -50px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(236,72,153,0.14) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Display */
+    .display-wrap {
+      background: #1a1a1a;
+      border-radius: clamp(12px, 3vw, 18px);
+      padding: clamp(12px, 3vw, 16px) clamp(14px, 4vw, 20px) clamp(10px, 2.5vw, 14px);
+      margin-bottom: clamp(12px, 3vw, 16px);
+      border: 1px solid #252525;
+      min-height: clamp(80px, 18vw, 110px);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .history {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #555;
+      min-height: 18px;
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .display {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(28px, 8vw, 38px);
+      font-weight: 700;
+      color: #f5f5f5;
+      text-align: right;
+      line-height: 1.1;
+      margin-top: 4px;
+      word-break: break-all;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .display.pop { transform: scale(1.04); opacity: 0.85; }
+
+    /*
+      Layout:
+      C    (    )    ÷
+      7    8    9    ×
+      4    5    6    −
+      1    2    3    +
+      0    .    ⌫    =
+    */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(6px, 2vw, 10px);
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: clamp(10px, 2.5vw, 16px);
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(16px, 4.5vw, 22px);
+      font-weight: 500;
+      /* height scales with viewport so buttons always fit screen */
+      height: clamp(52px, 13vw, 68px);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease, box-shadow 0.15s ease;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active { transform: scale(0.91); }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      background: rgba(255,255,255,0.1);
+      transition: opacity 0.15s ease;
+    }
+    .btn:hover::after { opacity: 1; }
+
+    /* Number buttons */
+    .btn-num {
+      background: #1e1e1e;
+      color: #e8e8e8;
+      border: 1px solid #2c2c2c;
+    }
+    .btn-num:hover { background: #262626; }
+
+    /* C — deep purple glow */
+    .btn-clear {
+      background: #3b0764;
+      color: #e879f9;
+      border: 1px solid #7e22ce;
+      font-weight: 600;
+      box-shadow: 0 0 18px rgba(168,85,247,0.3);
+    }
+    .btn-clear:hover { background: #4c0a80; box-shadow: 0 0 26px rgba(168,85,247,0.45); }
+
+    /* Bracket buttons */
+    .btn-bracket {
+      background: #1e1e1e;
+      color: #a78bfa;
+      border: 1px solid #3d2a7a;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+    }
+    .btn-bracket:hover { background: #26203a; }
+
+    /* Operator column */
+    .btn-op {
+      background: #2d1f5e;
+      color: #c4b5fd;
+      border: 1px solid #4c35a0;
+    }
+    .btn-op:hover { background: #3a2870; }
+    .btn-op.active-op {
+      background: #7c3aed;
+      color: #fff;
+      border-color: #8b5cf6;
+      box-shadow: 0 0 18px rgba(124,58,237,0.5);
+    }
+
+    /* Backspace */
+    .btn-back {
+      background: #1f1020;
+      color: #e879f9;
+      border: 1px solid #3b1a3d;
+    }
+    .btn-back:hover { background: #2a1530; box-shadow: 0 0 12px rgba(232,121,249,0.25); }
+
+    /* Equals */
+    .btn-eq {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+    }
+    .btn-eq:hover { box-shadow: 0 6px 28px rgba(124,58,237,0.65); }
+    .btn-eq:active { transform: scale(0.90); }
+
+    /* Ripple */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      transform: scale(0);
+      animation: ripple-anim 0.5s linear;
+      pointer-events: none;
+    }
+    @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+    .slide-in { animation: slideIn 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes slideIn {
+      from { transform: translateY(10px); opacity: 0.3; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: clamp(12px, 3vw, 18px);
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #e0dddd;
+      letter-spacing: 0.4px;
+    }
+    .footer span { color: #a679f0; }
+
+    /* Landscape phones — reduce button height so everything fits */
+    @media (max-height: 600px) and (orientation: landscape) {
+      body { padding: 8px; }
+      .display-wrap { min-height: 60px; padding: 8px 14px; margin-bottom: 8px; }
+      .display { font-size: clamp(20px, 5vw, 28px); }
+      .btn { height: clamp(40px, 9vh, 52px); }
+      .grid { gap: 6px; }
+      .footer { margin-top: 8px; }
+    }
+
+    /* Very small phones (≤320px) */
+    @media (max-width: 320px) {
+      .display { font-size: 22px; }
+      .btn { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;">
+  <div class="calc">
+    <div class="display-wrap">
+      <div class="history" id="history"></div>
+      <div class="display" id="display">0</div>
+    </div>
+
+    <div class="grid">
+      <!-- Row 1: C  (  )  ÷ -->
+      <button class="btn btn-clear"   data-action="clear">C</button>
+      <button class="btn btn-bracket" data-action="bracket-open">(</button>
+      <button class="btn btn-bracket" data-action="bracket-close">)</button>
+      <button class="btn btn-op"      data-action="op" data-op="÷">÷</button>
+
+      <!-- Row 2: 7  8  9  × -->
+      <button class="btn btn-num"     data-action="num" data-val="7">7</button>
+      <button class="btn btn-num"     data-action="num" data-val="8">8</button>
+      <button class="btn btn-num"     data-action="num" data-val="9">9</button>
+      <button class="btn btn-op"      data-action="op" data-op="×">×</button>
+
+      <!-- Row 3: 4  5  6  − -->
+      <button class="btn btn-num"     data-action="num" data-val="4">4</button>
+      <button class="btn btn-num"     data-action="num" data-val="5">5</button>
+      <button class="btn btn-num"     data-action="num" data-val="6">6</button>
+      <button class="btn btn-op"      data-action="op" data-op="−">−</button>
+
+      <!-- Row 4: 1  2  3  + -->
+      <button class="btn btn-num"     data-action="num" data-val="1">1</button>
+      <button class="btn btn-num"     data-action="num" data-val="2">2</button>
+      <button class="btn btn-num"     data-action="num" data-val="3">3</button>
+      <button class="btn btn-op"      data-action="op" data-op="+">+</button>
+
+      <!-- Row 5: 0  .  ⌫  = -->
+      <button class="btn btn-num"     data-action="num" data-val="0">0</button>
+      <button class="btn btn-num"     data-action="decimal">.</button>
+      <button class="btn btn-back"    data-action="backspace">⌫</button>
+      <button class="btn btn-eq"      data-action="equals">=</button>
+    </div>
+  </div>
+  <p class="footer">© 2026 | Made by <span>SK Miraj Ahamed</span></p>
+</div>
+
+<script>
+  let expr = '', current = '0', prev = '', operator = '', shouldReset = false, activeOpBtn = null, openBrackets = 0, useBracketMode = false;
+
+  const display = document.getElementById('display');
+  const history = document.getElementById('history');
+
+  function updateDisplay(val, animate = false) {
+    display.textContent = val;
+    if (animate) { display.classList.remove('slide-in'); void display.offsetWidth; display.classList.add('slide-in'); }
+  }
+
+  function popAnim() { display.classList.add('pop'); setTimeout(() => display.classList.remove('pop'), 150); }
+
+  function setActiveOp(btn) {
+    if (activeOpBtn) activeOpBtn.classList.remove('active-op');
+    activeOpBtn = btn;
+    if (btn) btn.classList.add('active-op');
+  }
+
+  function safeEval(str) {
+    try {
+      let s = str.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+      let result = Function('"use strict"; return (' + s + ')')();
+      if (!isFinite(result)) return 'Error';
+      let f = parseFloat(result.toPrecision(10)).toString();
+      if (f.length > 12) f = parseFloat(result).toExponential(4);
+      return f;
+    } catch(e) { return 'Error'; }
+  }
+
+  function calculate(a, b, op) {
+    a = parseFloat(a); b = parseFloat(b);
+    if (op === '+') return a + b;
+    if (op === '−') return a - b;
+    if (op === '×') return a * b;
+    if (op === '÷') return b === 0 ? null : a / b;
+    return b;
+  }
+
+  function format(n) {
+    if (n === null) return 'Error';
+    let s = parseFloat(n.toPrecision(10)).toString();
+    if (s.length > 12) s = parseFloat(n).toExponential(4);
+    return s;
+  }
+
+  function addRipple(btn, e) {
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = (e.clientX - rect.left - size/2) + 'px';
+    r.style.top  = (e.clientY - rect.top  - size/2) + 'px';
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 500);
+  }
+
+  function doBackspace() {
+    if (useBracketMode) {
+      if (!expr.length) return;
+      const last = expr[expr.length-1];
+      if (last === '(') openBrackets--;
+      if (last === ')') openBrackets++;
+      expr = expr.slice(0,-1);
+      display.textContent = expr || '0';
+      history.textContent = expr;
+      popAnim(); return;
+    }
+    if (current === 'Error') { current = '0'; }
+    else if (shouldReset) { return; }
+    else if (current.length > 1) { current = current.slice(0,-1); }
+    else { current = '0'; }
+    updateDisplay(current); popAnim();
+  }
+
+  function handleAction(action, value, btn, e) {
+    if (e && btn) addRipple(btn, e);
+
+    if (action === 'bracket-open') {
+      if (!useBracketMode) { useBracketMode = true; expr = (current === '0' || shouldReset) ? '' : current; }
+      expr += '('; openBrackets++;
+      display.textContent = expr; history.textContent = expr;
+      setActiveOp(null); shouldReset = false; popAnim(); return;
+    }
+
+    if (action === 'bracket-close') {
+      if (!useBracketMode || openBrackets <= 0) return;
+      expr += ')'; openBrackets--;
+      display.textContent = expr; history.textContent = expr;
+      popAnim(); return;
+    }
+
+    if (useBracketMode) {
+      if (action === 'num') { expr += value; display.textContent = expr; history.textContent = expr; popAnim(); }
+      else if (action === 'decimal') { if (!expr.match(/\d\.$/)) expr += '.'; display.textContent = expr; }
+      else if (action === 'op') { expr += value; display.textContent = expr; history.textContent = expr; setActiveOp(btn); }
+      else if (action === 'equals') {
+        while (openBrackets > 0) { expr += ')'; openBrackets--; }
+        const result = safeEval(expr);
+        history.textContent = expr + ' =';
+        updateDisplay(result, true);
+        current = result; expr = ''; useBracketMode = false; shouldReset = true; setActiveOp(null);
+      }
+      else if (action === 'clear') {
+        expr = ''; openBrackets = 0; useBracketMode = false;
+        current = '0'; prev = ''; operator = ''; shouldReset = false;
+        history.textContent = ''; updateDisplay('0', true); setActiveOp(null);
+      }
+      else if (action === 'backspace') { doBackspace(); }
+      else if (action === 'percent') { expr += '/100'; display.textContent = expr; }
+      return;
+    }
+
+    if (action === 'num') {
+      if (shouldReset || current === '0') { current = value; shouldReset = false; }
+      else { if (current.replace('.','').replace('-','').length >= 9) return; current += value; }
+      updateDisplay(current); popAnim();
+    }
+    else if (action === 'decimal') {
+      if (shouldReset) { current = '0'; shouldReset = false; }
+      if (!current.includes('.')) current += '.';
+      updateDisplay(current);
+    }
+    else if (action === 'op') {
+      if (prev && !shouldReset) { current = format(calculate(prev, current, operator)); updateDisplay(current, true); }
+      prev = current; operator = value; shouldReset = true;
+      setActiveOp(btn); history.textContent = prev + ' ' + value;
+    }
+    else if (action === 'equals') {
+      if (!prev || !operator) return;
+      const result = calculate(prev, current, operator);
+      history.textContent = prev + ' ' + operator + ' ' + current + ' =';
+      current = format(result); updateDisplay(current, true);
+      prev = ''; operator = ''; shouldReset = true; setActiveOp(null);
+    }
+    else if (action === 'clear') {
+      current = '0'; prev = ''; operator = ''; shouldReset = false;
+      history.textContent = ''; updateDisplay('0', true); setActiveOp(null);
+    }
+    else if (action === 'backspace') { doBackspace(); }
+    else if (action === 'toggle-sign') {
+      if (current !== '0' && current !== 'Error') {
+        current = current.startsWith('-') ? current.slice(1) : '-' + current;
+        updateDisplay(current); popAnim();
+      }
+    }
+    else if (action === 'percent') {
+      if (current !== 'Error') { current = format(parseFloat(current)/100); updateDisplay(current); popAnim(); }
+    }
+  }
+
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      handleAction(this.dataset.action, this.dataset.val || this.dataset.op || '', this, e);
+    });
+  });
+
+  document.addEventListener('keydown', function(e) {
+    const k = e.key;
+    if (k >= '0' && k <= '9') handleAction('num', k, null, null);
+    else if (k === '.') handleAction('decimal', '', null, null);
+    else if (k === '(') handleAction('bracket-open', '', null, null);
+    else if (k === ')') handleAction('bracket-close', '', null, null);
+    else if (k === '+') handleAction('op', '+', document.querySelector('[data-op="+"]'), null);
+    else if (k === '-') handleAction('op', '−', document.querySelector('[data-op="−"]'), null);
+    else if (k === '*') handleAction('op', '×', document.querySelector('[data-op="×"]'), null);
+    else if (k === '/') { e.preventDefault(); handleAction('op', '÷', document.querySelector('[data-op="÷"]'), null); }
+    else if (k === 'Enter' || k === '=') handleAction('equals', '', null, null);
+    else if (k === 'Backspace') doBackspace();
+    else if (k === 'Escape') handleAction('clear', '', null, null);
+    else if (k === '%') handleAction('percent', '', null, null);
+  });
+</script>
+</body>
+</html>
