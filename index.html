@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Neon Calculator</title>
+  <title>Modern Calculator</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,32 +15,103 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      background: #080808;
+      background: #060606;
       font-family: 'Outfit', sans-serif;
       padding: 16px;
+      overflow: hidden;
+      position: relative;
     }
 
-    body::before {
-      content: '';
+    /* ── Animated background orbs ── */
+    .orb {
       position: fixed;
-      top: -100px; left: -100px;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+      border-radius: 50%;
       pointer-events: none;
+      z-index: 0;
     }
 
-    body::after {
-      content: '';
-      position: fixed;
-      bottom: -100px; right: -100px;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(236,72,153,0.12) 0%, transparent 70%);
-      pointer-events: none;
+    .orb-1 {
+      width: 520px; height: 520px;
+      background: rgba(124, 58, 237, 0.55);
+      filter: blur(110px);
+      top: -160px; left: -160px;
+      animation: float1 8s ease-in-out infinite;
+    }
+
+    .orb-2 {
+      width: 480px; height: 480px;
+      background: rgba(219, 39, 119, 0.5);
+      filter: blur(110px);
+      bottom: -130px; right: -130px;
+      animation: float2 10s ease-in-out infinite;
+    }
+
+    .orb-3 {
+      width: 380px; height: 380px;
+      background: rgba(167, 139, 250, 0.45);
+      filter: blur(95px);
+      top: 50%; left: 50%;
+      animation: float3 12s ease-in-out infinite;
+    }
+
+    .orb-4 {
+      width: 300px; height: 300px;
+      background: rgba(236, 72, 153, 0.45);
+      filter: blur(85px);
+      top: 5%; right: -60px;
+      animation: float4 7s ease-in-out infinite;
+    }
+
+    .orb-5 {
+      width: 280px; height: 280px;
+      background: rgba(109, 40, 217, 0.5);
+      filter: blur(90px);
+      bottom: 10%; left: -60px;
+      animation: float5 9s ease-in-out infinite;
+    }
+
+    @keyframes float1 {
+      0%,100% { transform: translate(0px, 0px) scale(1); }
+      33%      { transform: translate(130px, 90px) scale(1.18); }
+      66%      { transform: translate(60px, 180px) scale(0.9); }
+    }
+
+    @keyframes float2 {
+      0%,100% { transform: translate(0px, 0px) scale(1); }
+      33%      { transform: translate(-110px, -80px) scale(1.15); }
+      66%      { transform: translate(-170px, -30px) scale(0.88); }
+    }
+
+    @keyframes float3 {
+      0%,100% { transform: translate(-50%, -50%) scale(1); }
+      25%      { transform: translate(-68%, -68%) scale(1.22); }
+      50%      { transform: translate(-35%, -40%) scale(0.85); }
+      75%      { transform: translate(-60%, -35%) scale(1.1); }
+    }
+
+    @keyframes float4 {
+      0%,100% { transform: translate(0px, 0px) scale(1); }
+      50%      { transform: translate(-90px, 110px) scale(1.2); }
+    }
+
+    @keyframes float5 {
+      0%,100% { transform: translate(0px, 0px) scale(1); }
+      50%      { transform: translate(100px, -80px) scale(1.16); }
+    }
+
+    /* wrapper and calc must sit above orbs */
+    .wrapper { position: relative; z-index: 1; }
+
+    .wrapper {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .calc {
       width: 100%;
-      max-width: 400px;
       background: #0f0f0f;
       border-radius: clamp(18px, 4vw, 28px);
       padding: clamp(14px, 4vw, 24px);
@@ -83,7 +154,7 @@
       overflow: hidden;
     }
 
-    .history {
+    .history-display {
       font-family: 'Space Mono', monospace;
       font-size: clamp(11px, 2.5vw, 13px);
       color: #555;
@@ -106,14 +177,7 @@
 
     .display.pop { transform: scale(1.04); opacity: 0.85; }
 
-    /*
-      Layout:
-      C    (    )    ÷
-      7    8    9    ×
-      4    5    6    −
-      1    2    3    +
-      0    .    ⌫    =
-    */
+    /* Grid */
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -127,7 +191,6 @@
       font-family: 'Outfit', sans-serif;
       font-size: clamp(16px, 4.5vw, 22px);
       font-weight: 500;
-      /* height scales with viewport so buttons always fit screen */
       height: clamp(52px, 13vw, 68px);
       width: 100%;
       display: flex;
@@ -141,7 +204,6 @@
     }
 
     .btn:active { transform: scale(0.91); }
-
     .btn::after {
       content: '';
       position: absolute;
@@ -153,70 +215,157 @@
     }
     .btn:hover::after { opacity: 1; }
 
-    /* Number buttons */
-    .btn-num {
-      background: #1e1e1e;
-      color: #e8e8e8;
-      border: 1px solid #2c2c2c;
-    }
+    .btn-num { background: #1e1e1e; color: #e8e8e8; border: 1px solid #2c2c2c; }
     .btn-num:hover { background: #262626; }
 
-    /* C — deep purple glow */
     .btn-clear {
-      background: #3b0764;
-      color: #e879f9;
-      border: 1px solid #7e22ce;
-      font-weight: 600;
-      box-shadow: 0 0 18px rgba(168,85,247,0.3);
+      background: #3b0764; color: #e879f9; border: 1px solid #7e22ce;
+      font-weight: 600; box-shadow: 0 0 18px rgba(168,85,247,0.3);
     }
     .btn-clear:hover { background: #4c0a80; box-shadow: 0 0 26px rgba(168,85,247,0.45); }
 
-    /* Bracket buttons */
     .btn-bracket {
-      background: #1e1e1e;
-      color: #a78bfa;
-      border: 1px solid #3d2a7a;
-      font-family: 'Space Mono', monospace;
-      font-weight: 700;
+      background: #1e1e1e; color: #a78bfa; border: 1px solid #3d2a7a;
+      font-family: 'Space Mono', monospace; font-weight: 700;
     }
     .btn-bracket:hover { background: #26203a; }
 
-    /* Operator column */
-    .btn-op {
-      background: #2d1f5e;
-      color: #c4b5fd;
-      border: 1px solid #4c35a0;
-    }
+    .btn-op { background: #2d1f5e; color: #c4b5fd; border: 1px solid #4c35a0; }
     .btn-op:hover { background: #3a2870; }
     .btn-op.active-op {
-      background: #7c3aed;
-      color: #fff;
-      border-color: #8b5cf6;
+      background: #7c3aed; color: #fff; border-color: #8b5cf6;
       box-shadow: 0 0 18px rgba(124,58,237,0.5);
     }
 
-    /* Backspace */
-    .btn-back {
-      background: #1f1020;
-      color: #e879f9;
-      border: 1px solid #3b1a3d;
-    }
+    .btn-back { background: #1f1020; color: #e879f9; border: 1px solid #3b1a3d; }
     .btn-back:hover { background: #2a1530; box-shadow: 0 0 12px rgba(232,121,249,0.25); }
 
-    /* Equals */
     .btn-eq {
       background: linear-gradient(135deg, #7c3aed, #db2777);
-      color: #fff;
-      border: none;
-      box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+      color: #fff; border: none; box-shadow: 0 4px 20px rgba(124,58,237,0.4);
     }
     .btn-eq:hover { box-shadow: 0 6px 28px rgba(124,58,237,0.65); }
     .btn-eq:active { transform: scale(0.90); }
 
+    /* ── History Panel Button ── */
+    .btn-history-toggle {
+      width: 100%;
+      margin-top: clamp(8px, 2vw, 12px);
+      padding: 12px;
+      background: #1a1230;
+      color: #a78bfa;
+      border: 1px solid #3d2a7a;
+      border-radius: clamp(10px, 2.5vw, 14px);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .btn-history-toggle:hover {
+      background: #221840;
+      box-shadow: 0 0 14px rgba(167,139,250,0.25);
+    }
+
+    /* ── History Panel ── */
+    .history-panel {
+      width: 100%;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    .history-panel.open {
+      max-height: 320px;
+      opacity: 1;
+    }
+
+    .history-inner {
+      background: #0f0f0f;
+      border: 1px solid #2a2a2a;
+      border-radius: clamp(14px, 3vw, 20px);
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid #1e1e1e;
+    }
+
+    .history-header span {
+      font-size: 13px;
+      font-weight: 600;
+      color: #a78bfa;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-clear-history {
+      background: none;
+      border: 1px solid #3b1a3d;
+      color: #e879f9;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: background 0.2s;
+    }
+    .btn-clear-history:hover { background: #1f1020; }
+
+    .history-list {
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 8px 0;
+      scrollbar-width: thin;
+      scrollbar-color: #3d2a7a #0f0f0f;
+    }
+
+    .history-list::-webkit-scrollbar { width: 4px; }
+    .history-list::-webkit-scrollbar-track { background: #0f0f0f; }
+    .history-list::-webkit-scrollbar-thumb { background: #3d2a7a; border-radius: 4px; }
+
+    .history-item {
+      padding: 10px 18px;
+      border-bottom: 1px solid #1a1a1a;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-item:hover { background: #1a1230; }
+
+    .history-item .expr {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .history-item .res {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      color: #c4b5fd;
+      margin-top: 2px;
+    }
+
+    .history-empty {
+      text-align: center;
+      padding: 24px;
+      font-size: 13px;
+      color: #333;
+    }
+
     /* Ripple */
     .ripple {
-      position: absolute;
-      border-radius: 50%;
+      position: absolute; border-radius: 50%;
       background: rgba(255,255,255,0.18);
       transform: scale(0);
       animation: ripple-anim 0.5s linear;
@@ -227,85 +376,169 @@
     .slide-in { animation: slideIn 0.2s cubic-bezier(0.34,1.56,0.64,1); }
     @keyframes slideIn {
       from { transform: translateY(10px); opacity: 0.3; }
-      to   { transform: translateY(0);   opacity: 1; }
+      to   { transform: translateY(0); opacity: 1; }
     }
 
     .footer {
       text-align: center;
       margin-top: clamp(12px, 3vw, 18px);
       font-size: clamp(10px, 2.5vw, 12px);
-      color: #e0dddd;
+      color: #3a3a3a;
       letter-spacing: 0.4px;
     }
-    .footer span { color: #a679f0; }
+    .footer span { color: #6d28d9; }
 
-    /* Landscape phones — reduce button height so everything fits */
     @media (max-height: 600px) and (orientation: landscape) {
       body { padding: 8px; }
       .display-wrap { min-height: 60px; padding: 8px 14px; margin-bottom: 8px; }
       .display { font-size: clamp(20px, 5vw, 28px); }
       .btn { height: clamp(40px, 9vh, 52px); }
       .grid { gap: 6px; }
-      .footer { margin-top: 8px; }
-    }
-
-    /* Very small phones (≤320px) */
-    @media (max-width: 320px) {
-      .display { font-size: 22px; }
-      .btn { font-size: 15px; }
     }
   </style>
 </head>
 <body>
 
-<div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;">
+<!-- Animated background orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="orb orb-4"></div>
+<div class="orb orb-5"></div>
+
+<div class="wrapper">
   <div class="calc">
     <div class="display-wrap">
-      <div class="history" id="history"></div>
+      <div class="history-display" id="historyDisplay"></div>
       <div class="display" id="display">0</div>
     </div>
 
     <div class="grid">
-      <!-- Row 1: C  (  )  ÷ -->
       <button class="btn btn-clear"   data-action="clear">C</button>
       <button class="btn btn-bracket" data-action="bracket-open">(</button>
       <button class="btn btn-bracket" data-action="bracket-close">)</button>
       <button class="btn btn-op"      data-action="op" data-op="÷">÷</button>
 
-      <!-- Row 2: 7  8  9  × -->
       <button class="btn btn-num"     data-action="num" data-val="7">7</button>
       <button class="btn btn-num"     data-action="num" data-val="8">8</button>
       <button class="btn btn-num"     data-action="num" data-val="9">9</button>
       <button class="btn btn-op"      data-action="op" data-op="×">×</button>
 
-      <!-- Row 3: 4  5  6  − -->
       <button class="btn btn-num"     data-action="num" data-val="4">4</button>
       <button class="btn btn-num"     data-action="num" data-val="5">5</button>
       <button class="btn btn-num"     data-action="num" data-val="6">6</button>
       <button class="btn btn-op"      data-action="op" data-op="−">−</button>
 
-      <!-- Row 4: 1  2  3  + -->
       <button class="btn btn-num"     data-action="num" data-val="1">1</button>
       <button class="btn btn-num"     data-action="num" data-val="2">2</button>
       <button class="btn btn-num"     data-action="num" data-val="3">3</button>
       <button class="btn btn-op"      data-action="op" data-op="+">+</button>
 
-      <!-- Row 5: 0  .  ⌫  = -->
       <button class="btn btn-num"     data-action="num" data-val="0">0</button>
       <button class="btn btn-num"     data-action="decimal">.</button>
       <button class="btn btn-back"    data-action="backspace">⌫</button>
       <button class="btn btn-eq"      data-action="equals">=</button>
     </div>
+
+    <!-- History Toggle Button -->
+    <button class="btn-history-toggle" id="historyToggle">
+      🕓 &nbsp; Calculation History
+    </button>
   </div>
+
+  <!-- History Panel -->
+  <div class="history-panel" id="historyPanel">
+    <div class="history-inner">
+      <div class="history-header">
+        <span>🕓 HISTORY</span>
+        <button class="btn-clear-history" id="clearHistory">Clear All</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
   <p class="footer">© 2026 | Made by <span>SK Miraj Ahamed</span></p>
 </div>
 
 <script>
-  let expr = '', current = '0', prev = '', operator = '', shouldReset = false, activeOpBtn = null, openBrackets = 0, useBracketMode = false;
+  // ── State ──
+  let expr = '', current = '0', prev = '', operator = '', shouldReset = false;
+  let activeOpBtn = null, openBrackets = 0, useBracketMode = false;
 
-  const display = document.getElementById('display');
-  const history = document.getElementById('history');
+  const display      = document.getElementById('display');
+  const historyDisp  = document.getElementById('historyDisplay');
+  const historyPanel = document.getElementById('historyPanel');
+  const historyList  = document.getElementById('historyList');
+  const historyToggle= document.getElementById('historyToggle');
+  const clearHistBtn = document.getElementById('clearHistory');
 
+  // ── localStorage helpers ──
+  const DB_KEY = 'calc_history';
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(DB_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function saveHistory(records) {
+    localStorage.setItem(DB_KEY, JSON.stringify(records));
+  }
+
+  function addRecord(expression, result) {
+    const records = loadHistory();
+    records.unshift({
+      id: Date.now(),
+      expression,
+      result,
+      timestamp: new Date().toLocaleString()
+    });
+    // keep max 50 records
+    if (records.length > 50) records.pop();
+    saveHistory(records);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const records = loadHistory();
+    if (records.length === 0) {
+      historyList.innerHTML = '<div class="history-empty">No calculations yet</div>';
+      return;
+    }
+    historyList.innerHTML = records.map(r => `
+      <div class="history-item" data-result="${r.result}">
+        <div class="expr">${r.expression} &nbsp;·&nbsp; ${r.timestamp}</div>
+        <div class="res">= ${r.result}</div>
+      </div>
+    `).join('');
+
+    // Click on history item → load result into display
+    historyList.querySelectorAll('.history-item').forEach(item => {
+      item.addEventListener('click', () => {
+        current = item.dataset.result;
+        shouldReset = false;
+        updateDisplay(current, true);
+        // close panel
+        historyPanel.classList.remove('open');
+        historyToggle.textContent = '🕓   Calculation History';
+      });
+    });
+  }
+
+  // ── Toggle panel ──
+  historyToggle.addEventListener('click', () => {
+    const isOpen = historyPanel.classList.toggle('open');
+    historyToggle.innerHTML = isOpen
+      ? '✕ &nbsp; Close History'
+      : '🕓 &nbsp; Calculation History';
+    if (isOpen) renderHistory();
+  });
+
+  clearHistBtn.addEventListener('click', () => {
+    localStorage.removeItem(DB_KEY);
+    renderHistory();
+  });
+
+  // ── Display helpers ──
   function updateDisplay(val, animate = false) {
     display.textContent = val;
     if (animate) { display.classList.remove('slide-in'); void display.offsetWidth; display.classList.add('slide-in'); }
@@ -319,6 +552,7 @@
     if (btn) btn.classList.add('active-op');
   }
 
+  // ── Math ──
   function safeEval(str) {
     try {
       let s = str.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
@@ -346,6 +580,7 @@
     return s;
   }
 
+  // ── Ripple ──
   function addRipple(btn, e) {
     const r = document.createElement('span');
     r.className = 'ripple';
@@ -358,6 +593,7 @@
     setTimeout(() => r.remove(), 500);
   }
 
+  // ── Backspace ──
   function doBackspace() {
     if (useBracketMode) {
       if (!expr.length) return;
@@ -366,7 +602,7 @@
       if (last === ')') openBrackets++;
       expr = expr.slice(0,-1);
       display.textContent = expr || '0';
-      history.textContent = expr;
+      historyDisp.textContent = expr;
       popAnim(); return;
     }
     if (current === 'Error') { current = '0'; }
@@ -376,38 +612,41 @@
     updateDisplay(current); popAnim();
   }
 
+  // ── Main handler ──
   function handleAction(action, value, btn, e) {
     if (e && btn) addRipple(btn, e);
 
     if (action === 'bracket-open') {
       if (!useBracketMode) { useBracketMode = true; expr = (current === '0' || shouldReset) ? '' : current; }
       expr += '('; openBrackets++;
-      display.textContent = expr; history.textContent = expr;
+      display.textContent = expr; historyDisp.textContent = expr;
       setActiveOp(null); shouldReset = false; popAnim(); return;
     }
 
     if (action === 'bracket-close') {
       if (!useBracketMode || openBrackets <= 0) return;
       expr += ')'; openBrackets--;
-      display.textContent = expr; history.textContent = expr;
+      display.textContent = expr; historyDisp.textContent = expr;
       popAnim(); return;
     }
 
     if (useBracketMode) {
-      if (action === 'num') { expr += value; display.textContent = expr; history.textContent = expr; popAnim(); }
+      if (action === 'num') { expr += value; display.textContent = expr; historyDisp.textContent = expr; popAnim(); }
       else if (action === 'decimal') { if (!expr.match(/\d\.$/)) expr += '.'; display.textContent = expr; }
-      else if (action === 'op') { expr += value; display.textContent = expr; history.textContent = expr; setActiveOp(btn); }
+      else if (action === 'op') { expr += value; display.textContent = expr; historyDisp.textContent = expr; setActiveOp(btn); }
       else if (action === 'equals') {
         while (openBrackets > 0) { expr += ')'; openBrackets--; }
         const result = safeEval(expr);
-        history.textContent = expr + ' =';
+        const savedExpr = expr;
+        historyDisp.textContent = expr + ' =';
         updateDisplay(result, true);
+        if (result !== 'Error') addRecord(savedExpr, result);
         current = result; expr = ''; useBracketMode = false; shouldReset = true; setActiveOp(null);
       }
       else if (action === 'clear') {
         expr = ''; openBrackets = 0; useBracketMode = false;
         current = '0'; prev = ''; operator = ''; shouldReset = false;
-        history.textContent = ''; updateDisplay('0', true); setActiveOp(null);
+        historyDisp.textContent = ''; updateDisplay('0', true); setActiveOp(null);
       }
       else if (action === 'backspace') { doBackspace(); }
       else if (action === 'percent') { expr += '/100'; display.textContent = expr; }
@@ -427,18 +666,20 @@
     else if (action === 'op') {
       if (prev && !shouldReset) { current = format(calculate(prev, current, operator)); updateDisplay(current, true); }
       prev = current; operator = value; shouldReset = true;
-      setActiveOp(btn); history.textContent = prev + ' ' + value;
+      setActiveOp(btn); historyDisp.textContent = prev + ' ' + value;
     }
     else if (action === 'equals') {
       if (!prev || !operator) return;
       const result = calculate(prev, current, operator);
-      history.textContent = prev + ' ' + operator + ' ' + current + ' =';
+      const expression = prev + ' ' + operator + ' ' + current;
+      historyDisp.textContent = expression + ' =';
       current = format(result); updateDisplay(current, true);
+      if (current !== 'Error') addRecord(expression, current);
       prev = ''; operator = ''; shouldReset = true; setActiveOp(null);
     }
     else if (action === 'clear') {
       current = '0'; prev = ''; operator = ''; shouldReset = false;
-      history.textContent = ''; updateDisplay('0', true); setActiveOp(null);
+      historyDisp.textContent = ''; updateDisplay('0', true); setActiveOp(null);
     }
     else if (action === 'backspace') { doBackspace(); }
     else if (action === 'toggle-sign') {
@@ -451,6 +692,19 @@
       if (current !== 'Error') { current = format(parseFloat(current)/100); updateDisplay(current); popAnim(); }
     }
   }
+
+  // ── Orb pulse on button press ──
+  const orbs = document.querySelectorAll('.orb');
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('mousedown', () => {
+      orbs.forEach(o => {
+        o.style.filter = o.style.filter.includes('brightness')
+          ? o.style.filter
+          : (o.style.filter || '') + ' brightness(1.7)';
+        setTimeout(() => { o.style.filter = ''; }, 300);
+      });
+    });
+  });
 
   document.querySelectorAll('.btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
